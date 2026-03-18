@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+import math
+from pydantic import BaseModel, Field, field_validator
 
 
 FEATURE_NAMES = ["Time"] + [f"V{i}" for i in range(1, 29)] + ["Amount"]
@@ -35,6 +36,14 @@ class FraudRequest(BaseModel):
     V27: float
     V28: float
     Amount: float
+
+    # ── NaN / Inf validator ───────────────────────────────────────────────────
+    @field_validator("*", mode="before")
+    @classmethod
+    def reject_non_finite(cls, v):
+        if isinstance(v, float) and not math.isfinite(v):
+            raise ValueError(f"Non-finite float value not allowed: {v}")
+        return v
 
     def to_feature_list(self) -> list[float]:
         return [getattr(self, name) for name in FEATURE_NAMES]

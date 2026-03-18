@@ -1,19 +1,35 @@
 import time
 import uuid
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.model import load_model, get_model, predict
-from app.schemas import FraudRequest
+from app.schemas import FraudRequest, FraudResponse
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+# ── Structured JSON logging ──────────────────────────────────────────────────
+try:
+    from pythonjsonlogger import jsonlogger
+    handler = logging.StreamHandler()
+    handler.setFormatter(jsonlogger.JsonFormatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s"
+    ))
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
+except ImportError:
+    # Fallback to plaintext if python-json-logger not installed
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
 logger = logging.getLogger(__name__)
+
+# ── App version from env ─────────────────────────────────────────────────────
+APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 
 
 @asynccontextmanager
@@ -22,7 +38,16 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Fraud Detection API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Fraud Detection API", version=APP_VERSION, lifespan=lifespan)
+
+
+# ── Custom validation error handler (handles NaN/Inf serialization) ──────────
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Request validation failed — check for invalid or non-finite float values."},
+    )
 
 
 @app.middleware("http")
@@ -33,16 +58,20 @@ async def add_request_metadata(request: Request, call_next):
     elapsed_ms = (time.perf_counter() - start) * 1000
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Response-Time-Ms"] = f"{elapsed_ms:.1f}"
-    logger.info("request_id=%s method=%s path=%s status=%s time_ms=%.1f",
-                request_id, request.method, request.url.path,
-                response.status_code, elapsed_ms)
+    logger.info("request completed", extra={
+        "request_id": request_id,
+        "method": request.method,
+        "path": request.url.path,
+        "status": response.status_code,
+        "time_ms": round(elapsed_ms, 1),
+    })
     return response
 
 
-@app.post("/fraud-score")
-def fraud_score(request: FraudRequest) -> JSONResponse:
-    result = predict(request.to_feature_list())
-    return JSONResponse(content=result)
+# ── Endpoints ────────────────────────────────────────────────────────────────
+@app.post("/v1/fraud-score", response_model=FraudResponse)
+def fraud_score(request: FraudRequest) -> dict:
+    return predict(request.to_feature_list())
 
 
 @app.get("/health")
