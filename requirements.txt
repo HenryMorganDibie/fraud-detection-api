@@ -1,0 +1,8 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+scikit-learn==1.0.2
+numpy<2
+pydantic==2.5.2
+pytest==7.4.3
+httpx==0.25.2
+threadpoolctl>=2.0.0
