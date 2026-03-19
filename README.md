@@ -2,7 +2,7 @@
 
 A production-hardened FastAPI service serving real-time fraud predictions from a pre-trained RandomForestClassifier. The model accepts 30 input features — Time, V1–V28 (PCA-transformed), and Amount — and returns a fraud probability score between 0 and 100.
 
-This repo is a hardened implementation of a fraud scoring API, incorporating production improvements across performance, security, testing, Docker infrastructure, and deployment strategy.
+This repo implements production improvements across performance, security, testing, Docker infrastructure, and deployment strategy.
 
 ---
 
@@ -15,8 +15,9 @@ This repo is a hardened implementation of a fraud scoring API, incorporating pro
 ---
 
 ## Project Structure
+
 ```
-checkout-fraud-api/
+fraud-detection-api/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py           # FastAPI app, lifespan, middleware, auth, endpoints
@@ -40,7 +41,7 @@ checkout-fraud-api/
 
 ## Model Setup
 
-The model artifact is not included in this repo. To get started, train a RandomForestClassifier on your own transaction dataset with the same feature schema (Time, V1–V28, Amount) and save it with joblib.
+The model artifact is not included in this repo. To get started, train a RandomForestClassifier on your own transaction dataset with the same feature schema (Time, V1–V28, Amount) and save it with joblib:
 
 ```python
 import joblib
@@ -89,6 +90,7 @@ curl http://localhost:8888/health
 ## Running Tests
 
 Tests run automatically during the Docker build in the test stage. To run them explicitly:
+
 ```bash
 # Run full test suite in Docker (recommended)
 docker-compose run --rm test
@@ -148,6 +150,7 @@ Scores a transaction for fraud probability.
 | `model-version` | string | Version of the loaded model |
 
 **Error responses:**
+
 | Status | Reason |
 |---|---|
 | `403` | Missing or invalid API key |
@@ -159,7 +162,6 @@ Scores a transaction for fraud probability.
 
 Returns model load status. No authentication required.
 
-**Response:**
 ```json
 {
   "status": "healthy",
@@ -218,6 +220,7 @@ The Dockerfile uses a **multi-stage build**:
 - Copies application from the test stage
 - Strips test dependencies (pytest, httpx, anyio) from the final image
 - Runs with 2 workers and ALB-compatible keep-alive timeout
+
 ```bash
 # Build production image and start
 docker-compose up --build -d api
@@ -273,3 +276,9 @@ These items are identified but not yet implemented:
 - **Model metadata endpoint**: `GET /v1/model-info` exposing training date, feature importance, and sklearn version
 - **ONNX migration**: Replace joblib with ONNX Runtime for 2–5x inference speedup and cross-framework portability
 - **Graceful degradation**: Return HTTP 503 with structured error body on model load failure rather than crashing the container
+
+---
+
+## Related
+
+- [Medium article: How to Audit a Production ML Inference API](https://medium.com/@KingHenryMorgansDiary/how-to-audit-a-production-ml-inference-api-a-practical-checklist-1e596d7a3847)
