@@ -1,6 +1,9 @@
 # ── Stage 1: test ────────────────────────────────────────────────────────────
 FROM python:3.9-slim AS test
 
+ARG API_KEY=dev-key-change-in-production
+ENV API_KEY=$API_KEY
+
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
