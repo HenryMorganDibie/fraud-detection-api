@@ -152,3 +152,12 @@ def test_health_unhealthy(monkeypatch):
     data = resp.json()
     assert data["status"] == "unhealthy"
     assert data["model_loaded"] is False
+
+
+def test_fraud_score_no_api_key(valid_payload):
+    """Requests without API key should be rejected with 403."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    unauthenticated_client = TestClient(app)
+    resp = unauthenticated_client.post("/v1/fraud-score", json=valid_payload)
+    assert resp.status_code == 403

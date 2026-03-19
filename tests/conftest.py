@@ -3,10 +3,12 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+API_KEY = "dev-key-change-in-production"
+
 
 @pytest.fixture
 def client():
-    with TestClient(app) as c:
+    with TestClient(app, headers={"X-API-Key": API_KEY}) as c:
         yield c
 
 

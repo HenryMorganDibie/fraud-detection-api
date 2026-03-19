@@ -4,9 +4,10 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Security, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.security import APIKeyHeader
 
 from app.model import load_model, get_model, predict
 from app.schemas import FraudRequest, FraudResponse
@@ -20,7 +21,6 @@ try:
     ))
     logging.basicConfig(level=logging.INFO, handlers=[handler])
 except ImportError:
-    # Fallback to plaintext if python-json-logger not installed
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -28,8 +28,20 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# ── App version from env ─────────────────────────────────────────────────────
+# ── Config ───────────────────────────────────────────────────────────────────
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
+API_KEY = os.getenv("API_KEY", "dev-key-change-in-production")
+
+# ── API key auth ─────────────────────────────────────────────────────────────
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def verify_api_key(api_key: str = Security(api_key_header)):
+    if not api_key or api_key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid or missing API key. Provide a valid X-API-Key header.",
+        )
+    return api_key
 
 
 @asynccontextmanager
@@ -69,7 +81,7 @@ async def add_request_metadata(request: Request, call_next):
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
-@app.post("/v1/fraud-score", response_model=FraudResponse)
+@app.post("/v1/fraud-score", response_model=FraudResponse, dependencies=[Depends(verify_api_key)])
 def fraud_score(request: FraudRequest) -> dict:
     return predict(request.to_feature_list())
 
