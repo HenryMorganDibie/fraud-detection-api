@@ -1,9 +1,11 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
-API_KEY = "dev-key-change-in-production"
+# Read API key from environment — set via .env file or CI environment variable
+API_KEY = os.getenv("API_KEY", "dev-key-change-in-production")
 
 
 @pytest.fixture

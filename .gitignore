@@ -5,3 +5,8 @@ __pycache__/
 *.egg-info/
 .env
 .DS_Store
+
+# Model artifacts — not included in repo
+# Download dataset from: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+model/fraud-model.joblib
+model/fraud-model.pickle

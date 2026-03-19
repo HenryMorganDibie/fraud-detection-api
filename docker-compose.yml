@@ -5,12 +5,13 @@ services:
       target: production
     ports:
       - "8888:8888"
+    env_file:
+      - .env
     environment:
       - FRAUD_THRESHOLD=50
       - MODEL_VERSION=1.0.0
       - APP_VERSION=1.0.0
       - MODEL_PATH=model/fraud-model.joblib
-      - API_KEY=dev-key-change-in-production
     deploy:
       resources:
         limits:
@@ -31,9 +32,10 @@ services:
       context: .
       target: test
     command: python -m pytest tests/ -v
+    env_file:
+      - .env
     environment:
       - FRAUD_THRESHOLD=50
       - MODEL_VERSION=1.0.0
       - APP_VERSION=1.0.0
       - MODEL_PATH=model/fraud-model.joblib
-      - API_KEY=dev-key-change-in-production

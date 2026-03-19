@@ -30,7 +30,9 @@ logger = logging.getLogger(__name__)
 
 # ── Config ───────────────────────────────────────────────────────────────────
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
-API_KEY = os.getenv("API_KEY", "dev-key-change-in-production")
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    raise RuntimeError("API_KEY environment variable is not set. See .env.example.")
 
 # ── API key auth ─────────────────────────────────────────────────────────────
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
