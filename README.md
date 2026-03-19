@@ -1,6 +1,6 @@
 # Fraud Detection API
 
-A production-hardened FastAPI service serving real-time fraud predictions from a pre-trained RandomForestClassifier. Built on the [Kaggle Credit Card Fraud Detection dataset](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud).
+A production-hardened FastAPI service serving real-time fraud predictions from a pre-trained RandomForestClassifier. The model accepts 30 input features — Time, V1–V28 (PCA-transformed), and Amount — and returns a fraud probability score between 0 and 100.
 
 This repo is a hardened implementation of a fraud scoring API, incorporating production improvements across performance, security, testing, Docker infrastructure, and deployment strategy.
 
@@ -40,11 +40,8 @@ checkout-fraud-api/
 
 ## Model Setup
 
-The model artifact is not included in this repo. To get started:
+The model artifact is not included in this repo. To get started, train a RandomForestClassifier on your own transaction dataset with the same feature schema (Time, V1–V28, Amount) and save it with joblib.
 
-1. Download the dataset from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
-2. Train a `RandomForestClassifier` on the `creditcard.csv` file
-3. Save it with joblib:
 ```python
 import joblib
 from sklearn.ensemble import RandomForestClassifier
