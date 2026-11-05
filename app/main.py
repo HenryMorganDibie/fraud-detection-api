@@ -2,6 +2,7 @@ import time
 import uuid
 import logging
 import os
+import hmac
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Security, Depends, HTTPException, status
@@ -38,7 +39,7 @@ if not API_KEY:
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 def verify_api_key(api_key: str = Security(api_key_header)):
-    if not api_key or api_key != API_KEY:
+    if not api_key or not hmac.compare_digest(api_key.encode(), API_KEY.encode()):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid or missing API key. Provide a valid X-API-Key header.",
